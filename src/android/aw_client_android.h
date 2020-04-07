@@ -8,7 +8,7 @@
 extern "C" {
 #endif
 	JNIEXPORT void JNICALL Java_com_angelsware_http_Request_onProgress(JNIEnv* env, jclass clazz, jint bytesRead, jint length);
-	JNIEXPORT void JNICALL Java_com_angelsware_http_Request_onComplete(JNIEnv* env, jclass clazz, jint result, jint responseCode, jbyteArray data);
+	JNIEXPORT void JNICALL Java_com_angelsware_http_Request_onComplete(JNIEnv* env, jclass clazz, jint result, jint responseCode, jbyteArray data, jlong requestPtr);
 #ifdef __cplusplus
 }
 #endif

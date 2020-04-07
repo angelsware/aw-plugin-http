@@ -33,7 +33,7 @@ class Request extends AsyncTask<String, Integer, String> {
 	}
 
 	public static native void onProgress(int bytesRead, int length);
-	public static native void onComplete(int result, int responseCode, byte[] data);
+	public static native void onComplete(int result, int responseCode, byte[] data, long requestPtr);
 
 	public void setRequestMethod(String requestMethod) {
 		mRequestMethod = requestMethod;
@@ -48,7 +48,8 @@ class Request extends AsyncTask<String, Integer, String> {
 		mHeaders.put(key, value);
 	}
 
-	public void send(String uri) {
+	public void send(String uri, long requestPtr) {
+		mRequestPtr = requestPtr;
 		execute(uri);
 	}
 
@@ -119,7 +120,7 @@ class Request extends AsyncTask<String, Integer, String> {
 	@Override
 	protected void onPostExecute(String url) {
 		if (mByteArrayOutputStream != null) {
-			onComplete(RequestResult.OK.ordinal(), mResponseCode, mByteArrayOutputStream.toByteArray());
+			onComplete(RequestResult.OK.ordinal(), mResponseCode, mByteArrayOutputStream.toByteArray(), mRequestPtr);
 		}
 	}
 
@@ -127,7 +128,7 @@ class Request extends AsyncTask<String, Integer, String> {
 		AppActivity.getActivity().runOnUiThread(new Runnable() {
 			@Override
 			public void run() {
-				onComplete(result.ordinal(), mResponseCode, null);
+				onComplete(result.ordinal(), mResponseCode, null, mRequestPtr);
 			}
 		});
 	}
@@ -138,4 +139,5 @@ class Request extends AsyncTask<String, Integer, String> {
 	private String mRequestMethod = "GET";
 	private ByteArrayOutputStream mByteArrayOutputStream;
 	private int mResponseCode = 0;
+	private long mRequestPtr;
 }

@@ -8,7 +8,7 @@ namespace Http {
 		: public IClient
 	{
 	private:
-		void request(const Type::CUri& url, const char* content, int contentLength) override;
+		void send(const CRequest& request) override;
 		void addListener(IResponseListener* listener) override;
 		void removeListener(IResponseListener* listener) override;
 	};
