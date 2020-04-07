@@ -1,8 +1,10 @@
 #include "aw_client_android.h"
+#include <http/aw_request.h>
 #include <http/aw_requestresult.h>
 #include <http/aw_responselistener.h>
 #include <type/aw_uri.h>
 #include <type/aw_vector.h>
+#include <log/aw_log.h>
 #include <platform/android/aw_jniclass.h>
 #include <platform/android/aw_jni.h>
 #include <platform/android/aw_jnistring.h>
@@ -17,32 +19,38 @@ JNIEXPORT void JNICALL Java_com_angelsware_http_Request_onProgress(JNIEnv* env, 
 	}
 }
 
-JNIEXPORT void JNICALL Java_com_angelsware_http_Request_onComplete(JNIEnv* env, jclass clazz, jint result, jbyteArray data) {
+JNIEXPORT void JNICALL Java_com_angelsware_http_Request_onComplete(JNIEnv* env, jclass clazz, jint result, jint responseCode, jbyteArray data) {
 	if (data != nullptr) {
 		Platform::CJniNativeByteArray array(data);
 		for (unsigned int i = 0; i < sListeners.getSize(); ++i) {
-			sListeners[i]->onHttpComplete(Http::ERequestResult(result), array.getData(), array.getSize());
+			sListeners[i]->onHttpComplete(Http::ERequestResult(result), responseCode, array.getData(), array.getSize());
 		}
 	} else {
 		for (unsigned int i = 0; i < sListeners.getSize(); ++i) {
-			sListeners[i]->onHttpComplete(Http::ERequestResult(result), nullptr, 0);
+			sListeners[i]->onHttpComplete(Http::ERequestResult(result), responseCode, nullptr, 0);
 		}
 	}
 }
 
 namespace Http {
-	CClient_Android::CClient_Android() {
-		mRequest = new Platform::CJniClass("com/angelsware/http/Request", "()V");
-	}
+	void CClient_Android::send(const CRequest& request) {
+		Platform::CJniClass* javaRequest = new Platform::CJniClass("com/angelsware/http/Request", "()V");
+		const Type::CBuffer<char>& data = request.getData();
+		LOG_INFO("data count: %d", data.getCount());
+		Platform::CJniByteArray body(const_cast<char*>(data.data()), data.getCount());
+		Platform::CJniString requestMethod(request.getRequestMethod());
+		javaRequest->callVoidMethod("setRequestMethod", "(Ljava/lang/String;)V", requestMethod.getText());
+		javaRequest->callVoidMethod("setData", "([BI)V", body.getByteArray(), body.getSize());
+		const Type::CVector<Type::CPair<Type::CString, Type::CString> >& headers = request.getHeaders();
+		for (unsigned int i = 0; i < headers.getSize(); ++i) {
+			Platform::CJniString key(headers[i].getFirst().get());
+			Platform::CJniString value(headers[i].getSecond().get());
+			javaRequest->callVoidMethod("addHeader", "(Ljava/lang/String;Ljava/lang/String;)V", key.getText(), value.getText());
+		}
+		Platform::CJniString url(request.getUrl().getUri().get());
+		javaRequest->callVoidMethod("send", "(Ljava/lang/String;)V", url.getText());
 
-	CClient_Android::~CClient_Android() {
-		delete mRequest;
-	}
-
-	void CClient_Android::request(const Type::CUri& url, const char* content, int contentLength) {
-		Platform::CJniString str(url.getUri().get());
-		Platform::CJniByteArray body(const_cast<char*>(content), contentLength);
-		mRequest->callVoidMethod("request", "(Ljava/lang/String;[BI)V", str.getText(), body.getByteArray(), body.getSize());
+		// TODO: Delete request.
 	}
 
 	void CClient_Android::addListener(IResponseListener* listener) {

@@ -9,7 +9,7 @@ namespace Http {
 	{
 	public:
 		virtual void onHttpProgress(int bytesRead, int length) = 0;
-		virtual void onHttpComplete(ERequestResult result, char* data, unsigned int size) = 0;
+		virtual void onHttpComplete(ERequestResult result, int responseCode, char* data, unsigned int size) = 0;
 
 	protected:
 		virtual ~IResponseListener() {}

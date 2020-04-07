@@ -8,29 +8,19 @@
 extern "C" {
 #endif
 	JNIEXPORT void JNICALL Java_com_angelsware_http_Request_onProgress(JNIEnv* env, jclass clazz, jint bytesRead, jint length);
-	JNIEXPORT void JNICALL Java_com_angelsware_http_Request_onComplete(JNIEnv* env, jclass clazz, jint result, jbyteArray data);
+	JNIEXPORT void JNICALL Java_com_angelsware_http_Request_onComplete(JNIEnv* env, jclass clazz, jint result, jint responseCode, jbyteArray data);
 #ifdef __cplusplus
 }
 #endif
-
-namespace Platform {
-	class CJniClass;
-}
 
 namespace Http {
 	class CClient_Android
 		: public IClient
 	{
-	public:
-		CClient_Android();
-		~CClient_Android();
-
 	private:
-		void request(const Type::CUri& url, const char* content, int contentLength) override;
+		void send(const CRequest& request) override;
 		void addListener(IResponseListener* listener) override;
 		void removeListener(IResponseListener* listener) override;
-
-		Platform::CJniClass* mRequest;
 	};
 }
 

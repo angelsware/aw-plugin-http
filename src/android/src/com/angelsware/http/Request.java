@@ -14,6 +14,10 @@ import java.io.InputStream;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
+import java.util.Dictionary;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 
 class Request extends AsyncTask<String, Integer, String> {
 	private enum RequestResult {
@@ -29,11 +33,22 @@ class Request extends AsyncTask<String, Integer, String> {
 	}
 
 	public static native void onProgress(int bytesRead, int length);
-	public static native void onComplete(int result, byte[] data);
+	public static native void onComplete(int result, int responseCode, byte[] data);
 
-	void request(String uri, byte[] content, int contentLength) {
-		mContent = content;
-		mContentLength = contentLength;
+	public void setRequestMethod(String requestMethod) {
+		mRequestMethod = requestMethod;
+	}
+
+	public void setData(byte[] data, int size) {
+		mContent = data;
+		mContentLength = size;
+	}
+
+	public void addHeader(String key, String value) {
+		mHeaders.put(key, value);
+	}
+
+	public void send(String uri) {
 		execute(uri);
 	}
 
@@ -42,6 +57,14 @@ class Request extends AsyncTask<String, Integer, String> {
 		try {
 			URL url = new URL(uri[0]);
 			HttpURLConnection connection = (HttpURLConnection)url.openConnection();
+			connection.setRequestMethod(mRequestMethod);
+
+			Iterator it = mHeaders.entrySet().iterator();
+			while (it.hasNext()) {
+				Map.Entry pair = (Map.Entry)it.next();
+				connection.setRequestProperty(pair.getKey().toString(), pair.getValue().toString());
+				it.remove();
+			}
 
 			if (mContentLength > 0 && mContent != null) {
 				connection.setDoOutput(true);
@@ -53,7 +76,15 @@ class Request extends AsyncTask<String, Integer, String> {
 
 			connection.connect();
 			int length = connection.getContentLength();
-			InputStream input = new BufferedInputStream(url.openStream(), 8192);
+
+			mResponseCode = connection.getResponseCode();
+			InputStream input;
+			if (mResponseCode < HttpURLConnection.HTTP_BAD_REQUEST) {
+				input = new BufferedInputStream(connection.getInputStream(), 8192);
+			} else {
+				input = new BufferedInputStream(connection.getErrorStream(), 8192);
+			}
+
 			mByteArrayOutputStream = new ByteArrayOutputStream();
 			byte[] data = new byte[1024];
 			int total = 0;
@@ -88,7 +119,7 @@ class Request extends AsyncTask<String, Integer, String> {
 	@Override
 	protected void onPostExecute(String url) {
 		if (mByteArrayOutputStream != null) {
-			onComplete(RequestResult.OK.ordinal(), mByteArrayOutputStream.toByteArray());
+			onComplete(RequestResult.OK.ordinal(), mResponseCode, mByteArrayOutputStream.toByteArray());
 		}
 	}
 
@@ -96,12 +127,15 @@ class Request extends AsyncTask<String, Integer, String> {
 		AppActivity.getActivity().runOnUiThread(new Runnable() {
 			@Override
 			public void run() {
-				onComplete(result.ordinal(), null);
+				onComplete(result.ordinal(), mResponseCode, null);
 			}
 		});
 	}
 
+	private Map<String, String> mHeaders = new HashMap<>();
 	private byte[] mContent;
 	private int mContentLength;
+	private String mRequestMethod = "GET";
 	private ByteArrayOutputStream mByteArrayOutputStream;
+	private int mResponseCode = 0;
 }
