@@ -14,8 +14,12 @@ plugins:
 ```
 
 ```
-Compass::ISensor* compassSensor = Compass::CSensorFactory::create();
-compassSensor->onCreate();
-compassSensor->addListener(this);
+Http::CClient* client = Http::CClientFactory::create();
+client->addListener(this);
+
+Http::CRequest request("GET", Type::CUri("https://angelsware.com"));
+client->send(request);
+
+Http::CClientFactory::destroy(client);
 
 ```

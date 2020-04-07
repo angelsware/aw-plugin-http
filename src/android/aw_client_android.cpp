@@ -2,6 +2,7 @@
 #include <http/aw_request.h>
 #include <http/aw_requestresult.h>
 #include <http/aw_responselistener.h>
+#include <http/aw_response.h>
 #include <type/aw_uri.h>
 #include <type/aw_vector.h>
 #include <platform/android/aw_jniclass.h>
@@ -23,11 +24,11 @@ JNIEXPORT void JNICALL Java_com_angelsware_http_Request_onComplete(JNIEnv* env, 
 	if (data != nullptr) {
 		Platform::CJniNativeByteArray array(data);
 		for (unsigned int i = 0; i < sListeners.getSize(); ++i) {
-			sListeners[i]->onHttpComplete(Http::ERequestResult(result), responseCode, array.getData(), array.getSize());
+			sListeners[i]->onHttpComplete(Http::ERequestResult(result), Http::CResponse(responseCode, array.getData(), array.getSize()));
 		}
 	} else {
 		for (unsigned int i = 0; i < sListeners.getSize(); ++i) {
-			sListeners[i]->onHttpComplete(Http::ERequestResult(result), responseCode, nullptr, 0);
+			sListeners[i]->onHttpComplete(Http::ERequestResult(result), Http::CResponse(responseCode, nullptr, 0));
 		}
 	}
 
