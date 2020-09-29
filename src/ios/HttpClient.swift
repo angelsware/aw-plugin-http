@@ -78,8 +78,8 @@ func HttpRequest_setUrl(ptr: UnsafeMutablePointer<HttpRequest>, url: UnsafePoint
 }
 
 @_cdecl("HttpRequest_setData")
-func HttpRequest_setDataLength(ptr: UnsafeMutablePointer<HttpRequest>, data: UnsafePointer<CChar>) {
-	ptr.pointee.data?.append(contentsOf: Data(String.init(cString: data).utf8))
+func HttpRequest_setData(ptr: UnsafeMutablePointer<HttpRequest>, data: UnsafePointer<CChar>, length: Int32) {
+	ptr.pointee.data = Data(bytes: data, count: Int(length))
 }
 
 @_cdecl("HttpClient_create")

@@ -16,7 +16,7 @@ extern "C" {
 	void HttpRequest_addHeader(void* ptr, const char* key, const char* value);
 	void HttpRequest_setMethod(void* ptr, const char* method);
 	void HttpRequest_setUrl(void* ptr, const char* url);
-	void HttpRequest_setData(void* ptr, const char* data);
+	void HttpRequest_setData(void* ptr, const char* data, unsigned int length);
 }
 
 static Type::CVector<Http::IResponseListener*> sListeners;
@@ -51,7 +51,7 @@ namespace Http {
 		void* r = HttpRequest_create();
 		HttpRequest_setUrl(r, request.getUrl().getUri().get());
 		HttpRequest_setMethod(r, request.getRequestMethod());
-		HttpRequest_setData(r, request.getData().data());
+		HttpRequest_setData(r, request.getData().data(), request.getData().getCount());
 		const Type::CVector<Type::CPair<Type::CString, Type::CString> >& headers = request.getHeaders();
 		for (int i = 0; i < headers.getSize(); ++i) {
 			HttpRequest_addHeader(r, headers[i].getFirst().get(), headers[i].getSecond().get());
